@@ -76,7 +76,7 @@ CHROMIUM_BIN="${CHROMIUM_DIR}/chrome-linux/chrome"
 
 echo "Installing chromium revision $CHROMIUM_REVISION"
 download_with_retries $CHROMIUM_URL "/tmp" $CHROMIUM_ARCHIVE
-mkdir $CHROMIUM_DIR
+mkdir -p $CHROMIUM_DIR
 unzip -qq /tmp/$CHROMIUM_ARCHIVE -d $CHROMIUM_DIR
 
 ln -s $CHROMIUM_BIN /usr/bin/chromium

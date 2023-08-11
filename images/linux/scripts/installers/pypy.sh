@@ -48,7 +48,7 @@ function InstallPyPy
     fi
 
     echo "Create PyPy '$PYPY_TOOLCACHE_VERSION_PATH' folder"
-    mkdir $PYPY_TOOLCACHE_VERSION_PATH
+    mkdir -p $PYPY_TOOLCACHE_VERSION_PATH
 
     echo "Move PyPy '$PACKAGE_TEMP_FOLDER' binaries to '$PYPY_TOOLCACHE_VERSION_ARCH_PATH' folder"
     mv $PACKAGE_TEMP_FOLDER $PYPY_TOOLCACHE_VERSION_ARCH_PATH

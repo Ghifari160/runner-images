@@ -60,7 +60,7 @@ $languageAndRuntime.AddToolVersion("Swift", $(Get-SwiftVersion))
 
 # Package Management
 $packageManagement = $installedSoftware.AddHeader("Package Management")
-$packageManagement.AddToolVersion("cpan", $(Get-CpanVersion))
+# $packageManagement.AddToolVersion("cpan", $(Get-CpanVersion))
 $packageManagement.AddToolVersion("Helm", $(Get-HelmVersion))
 $packageManagement.AddToolVersion("Homebrew", $(Get-HomebrewVersion))
 $packageManagement.AddToolVersion("Miniconda", $(Get-MinicondaVersion))
@@ -96,7 +96,7 @@ if (Test-IsUbuntu20) {
 
 # Tools
 $tools = $installedSoftware.AddHeader("Tools")
-$tools.AddToolVersion("Ansible", $(Get-AnsibleVersion))
+# $tools.AddToolVersion("Ansible", $(Get-AnsibleVersion))
 $tools.AddToolVersion("apt-fast", $(Get-AptFastVersion))
 $tools.AddToolVersion("AzCopy", $(Get-AzCopyVersion))
 $tools.AddToolVersion("Bazel", $(Get-BazelVersion))
@@ -215,8 +215,8 @@ if (Test-IsUbuntu20) {
     $databasesTools.AddToolVersion("MongoDB", $(Get-MongoDbVersion))
 }
 $databasesTools.AddToolVersion("sqlite3", $(Get-SqliteVersion))
-$databasesTools.AddNode($(Build-PostgreSqlSection))
-$databasesTools.AddNode($(Build-MySQLSection))
+# $databasesTools.AddNode($(Build-PostgreSqlSection))
+# $databasesTools.AddNode($(Build-MySQLSection))
 $databasesTools.AddNode($(Build-MSSQLToolsSection))
 
 $cachedTools = $installedSoftware.AddHeader("Cached Tools")
@@ -232,9 +232,9 @@ $powerShellTools.AddHeader("PowerShell Modules").AddNodes($(Get-PowerShellModule
 
 $installedSoftware.AddHeader("Web Servers").AddTable($(Build-WebServersTable))
 
-$androidTools = $installedSoftware.AddHeader("Android")
-$androidTools.AddTable($(Build-AndroidTable))
-$androidTools.AddHeader("Environment variables").AddTable($(Build-AndroidEnvironmentTable))
+# $androidTools = $installedSoftware.AddHeader("Android")
+# $androidTools.AddTable($(Build-AndroidTable))
+# $androidTools.AddHeader("Environment variables").AddTable($(Build-AndroidEnvironmentTable))
 
 $installedSoftware.AddHeader("Cached Docker images").AddTable($(Get-CachedDockerImagesTableData))
 $installedSoftware.AddHeader("Installed apt packages").AddTable($(Get-AptPackages))
