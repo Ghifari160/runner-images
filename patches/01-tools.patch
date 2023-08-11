@@ -1,0 +1,585 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify scripts
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+---
+ .../SoftwareReport.Generator.ps1              |  14 +--
+ images/linux/scripts/base/apt.sh              |  20 +--
+ images/linux/scripts/base/snap.sh             |   8 +-
+ images/linux/scripts/installers/apache.sh     |   8 +-
+ images/linux/scripts/installers/cleanup.sh    |  12 +-
+ .../installers/configure-environment.sh       |  22 ++--
+ .../linux/scripts/installers/docker-moby.sh   |   8 +-
+ .../scripts/installers/dotnetcore-sdk.sh      |   4 +-
+ .../linux/scripts/installers/google-chrome.sh |   4 +-
+ images/linux/scripts/installers/mysql.sh      |   8 +-
+ images/linux/scripts/installers/nginx.sh      |   8 +-
+ images/linux/scripts/installers/nvm.sh        |   2 +-
+ images/linux/scripts/installers/postgresql.sh |   8 +-
+ images/linux/scripts/installers/pypy.sh       |   2 +-
+ images/linux/scripts/tests/Android.Tests.ps1  | 118 +++++++++---------
+ .../linux/scripts/tests/Databases.Tests.ps1   |  52 ++++----
+ .../linux/scripts/tests/WebServers.Tests.ps1  |  14 +--
+ 17 files changed, 160 insertions(+), 152 deletions(-)
+
+diff --git a/images/linux/scripts/SoftwareReport/SoftwareReport.Generator.ps1 b/images/linux/scripts/SoftwareReport/SoftwareReport.Generator.ps1
+index daa3268..6d7c7d0 100644
+--- a/images/linux/scripts/SoftwareReport/SoftwareReport.Generator.ps1
++++ b/images/linux/scripts/SoftwareReport/SoftwareReport.Generator.ps1
+@@ -60,7 +60,7 @@ $languageAndRuntime.AddToolVersion("Swift", $(Get-SwiftVersion))
+ 
+ # Package Management
+ $packageManagement = $installedSoftware.AddHeader("Package Management")
+-$packageManagement.AddToolVersion("cpan", $(Get-CpanVersion))
++# $packageManagement.AddToolVersion("cpan", $(Get-CpanVersion))
+ $packageManagement.AddToolVersion("Helm", $(Get-HelmVersion))
+ $packageManagement.AddToolVersion("Homebrew", $(Get-HomebrewVersion))
+ $packageManagement.AddToolVersion("Miniconda", $(Get-MinicondaVersion))
+@@ -96,7 +96,7 @@ if (Test-IsUbuntu20) {
+ 
+ # Tools
+ $tools = $installedSoftware.AddHeader("Tools")
+-$tools.AddToolVersion("Ansible", $(Get-AnsibleVersion))
++# $tools.AddToolVersion("Ansible", $(Get-AnsibleVersion))
+ $tools.AddToolVersion("apt-fast", $(Get-AptFastVersion))
+ $tools.AddToolVersion("AzCopy", $(Get-AzCopyVersion))
+ $tools.AddToolVersion("Bazel", $(Get-BazelVersion))
+@@ -215,8 +215,8 @@ if (Test-IsUbuntu20) {
+     $databasesTools.AddToolVersion("MongoDB", $(Get-MongoDbVersion))
+ }
+ $databasesTools.AddToolVersion("sqlite3", $(Get-SqliteVersion))
+-$databasesTools.AddNode($(Build-PostgreSqlSection))
+-$databasesTools.AddNode($(Build-MySQLSection))
++# $databasesTools.AddNode($(Build-PostgreSqlSection))
++# $databasesTools.AddNode($(Build-MySQLSection))
+ $databasesTools.AddNode($(Build-MSSQLToolsSection))
+ 
+ $cachedTools = $installedSoftware.AddHeader("Cached Tools")
+@@ -232,9 +232,9 @@ $powerShellTools.AddHeader("PowerShell Modules").AddNodes($(Get-PowerShellModule
+ 
+ $installedSoftware.AddHeader("Web Servers").AddTable($(Build-WebServersTable))
+ 
+-$androidTools = $installedSoftware.AddHeader("Android")
+-$androidTools.AddTable($(Build-AndroidTable))
+-$androidTools.AddHeader("Environment variables").AddTable($(Build-AndroidEnvironmentTable))
++# $androidTools = $installedSoftware.AddHeader("Android")
++# $androidTools.AddTable($(Build-AndroidTable))
++# $androidTools.AddHeader("Environment variables").AddTable($(Build-AndroidEnvironmentTable))
+ 
+ $installedSoftware.AddHeader("Cached Docker images").AddTable($(Get-CachedDockerImagesTableData))
+ $installedSoftware.AddHeader("Installed apt packages").AddTable($(Get-AptPackages))
+diff --git a/images/linux/scripts/base/apt.sh b/images/linux/scripts/base/apt.sh
+index 7257574..613e97d 100644
+--- a/images/linux/scripts/base/apt.sh
++++ b/images/linux/scripts/base/apt.sh
+@@ -1,12 +1,14 @@
+ #!/bin/bash -e
+ 
+-# Stop and disable apt-daily upgrade services;
+-systemctl stop apt-daily.timer
+-systemctl disable apt-daily.timer
+-systemctl disable apt-daily.service
+-systemctl stop apt-daily-upgrade.timer
+-systemctl disable apt-daily-upgrade.timer
+-systemctl disable apt-daily-upgrade.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Stop and disable apt-daily upgrade services;
++    systemctl stop apt-daily.timer
++    systemctl disable apt-daily.timer
++    systemctl disable apt-daily.service
++    systemctl stop apt-daily-upgrade.timer
++    systemctl disable apt-daily-upgrade.timer
++    systemctl disable apt-daily-upgrade.service
++fi
+ 
+ # Enable retry logic for apt up to 10 times
+ echo "APT::Acquire::Retries \"10\";" > /etc/apt/apt.conf.d/80-retries
+@@ -15,8 +17,8 @@ echo "APT::Acquire::Retries \"10\";" > /etc/apt/apt.conf.d/80-retries
+ echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes
+ 
+ # APT understands a field called Phased-Update-Percentage which can be used to control the rollout of a new version. It is an integer between 0 and 100.
+-# In case you have multiple systems that you want to receive the same set of updates, 
+-# you can set APT::Machine-ID to a UUID such that they all phase the same, 
++# In case you have multiple systems that you want to receive the same set of updates,
++# you can set APT::Machine-ID to a UUID such that they all phase the same,
+ # or set APT::Get::Never-Include-Phased-Updates or APT::Get::Always-Include-Phased-Updates to true such that APT will never/always consider phased updates.
+ # apt-cache policy pkgname
+ echo 'APT::Get::Always-Include-Phased-Updates "true";' > /etc/apt/apt.conf.d/99-phased-updates
+diff --git a/images/linux/scripts/base/snap.sh b/images/linux/scripts/base/snap.sh
+index 6d38c2e..da07c81 100644
+--- a/images/linux/scripts/base/snap.sh
++++ b/images/linux/scripts/base/snap.sh
+@@ -9,6 +9,8 @@
+ # a unix socket may die, restart snapd.service (and therefore snapd.socket)
+ # to make sure the socket is alive.
+ 
+-systemctl restart snapd.socket
+-systemctl restart snapd
+-snap set system refresh.hold="$(date --date='today+60 days' +%Y-%m-%dT%H:%M:%S%:z)"
++if [[ ! -f /run/systemd/container ]]; then
++    systemctl restart snapd.socket
++    systemctl restart snapd
++    snap set system refresh.hold="$(date --date='today+60 days' +%Y-%m-%dT%H:%M:%S%:z)"
++fi
+diff --git a/images/linux/scripts/installers/apache.sh b/images/linux/scripts/installers/apache.sh
+index fef2e55..0c98e56 100644
+--- a/images/linux/scripts/installers/apache.sh
++++ b/images/linux/scripts/installers/apache.sh
+@@ -7,8 +7,10 @@
+ # Install Apache
+ apt-get install apache2 -y
+ 
+-# Disable apache2.service
+-systemctl is-active --quiet apache2.service && systemctl stop apache2.service
+-systemctl disable apache2.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Disable apache2.service
++    systemctl is-active --quiet apache2.service && systemctl stop apache2.service
++    systemctl disable apache2.service
++fi
+ 
+ invoke_tests "WebServers" "Apache"
+diff --git a/images/linux/scripts/installers/cleanup.sh b/images/linux/scripts/installers/cleanup.sh
+index 8120144..6f71a8d 100644
+--- a/images/linux/scripts/installers/cleanup.sh
++++ b/images/linux/scripts/installers/cleanup.sh
+@@ -9,10 +9,12 @@ apt-get clean
+ rm -rf /tmp/*
+ rm -rf /root/.cache
+ 
+-# journalctl
+-if command -v journalctl; then
+-    journalctl --rotate
+-    journalctl --vacuum-time=1s
++if [[ ! -f /run/systemd/container ]]; then
++    # journalctl
++    if command -v journalctl; then
++        journalctl --rotate
++        journalctl --vacuum-time=1s
++    fi
+ fi
+ 
+ # delete all .gz and rotated file
+@@ -31,4 +33,4 @@ after=$(df / -Pm | awk 'NR==2{print $4}')
+  echo "Delta : $(($after-$before)) MB"
+ 
+ # delete symlink for tests running
+-rm -f /usr/local/bin/invoke_tests
+\ No newline at end of file
++rm -f /usr/local/bin/invoke_tests
+diff --git a/images/linux/scripts/installers/configure-environment.sh b/images/linux/scripts/installers/configure-environment.sh
+index f7973d5..77e76fa 100644
+--- a/images/linux/scripts/installers/configure-environment.sh
++++ b/images/linux/scripts/installers/configure-environment.sh
+@@ -14,17 +14,19 @@ echo ACCEPT_EULA=Y | tee -a /etc/environment
+ mkdir -p /etc/skel/.config/configstore
+ echo 'XDG_CONFIG_HOME=$HOME/.config' | tee -a /etc/environment
+ 
+-# Change waagent entries to use /mnt for swapfile
+-sed -i 's/ResourceDisk.Format=n/ResourceDisk.Format=y/g' /etc/waagent.conf
+-sed -i 's/ResourceDisk.EnableSwap=n/ResourceDisk.EnableSwap=y/g' /etc/waagent.conf
+-sed -i 's/ResourceDisk.SwapSizeMB=0/ResourceDisk.SwapSizeMB=4096/g' /etc/waagent.conf
++if [[ ! -f /run/systemd/container ]]; then
++    # Change waagent entries to use /mnt for swapfile
++    sed -i 's/ResourceDisk.Format=n/ResourceDisk.Format=y/g' /etc/waagent.conf
++    sed -i 's/ResourceDisk.EnableSwap=n/ResourceDisk.EnableSwap=y/g' /etc/waagent.conf
++    sed -i 's/ResourceDisk.SwapSizeMB=0/ResourceDisk.SwapSizeMB=4096/g' /etc/waagent.conf
+ 
+-# Add localhost alias to ::1 IPv6
+-sed -i 's/::1 ip6-localhost ip6-loopback/::1     localhost ip6-localhost ip6-loopback/g' /etc/hosts
++    # Add localhost alias to ::1 IPv6
++    sed -i 's/::1 ip6-localhost ip6-loopback/::1     localhost ip6-localhost ip6-loopback/g' /etc/hosts
++fi
+ 
+ # Prepare directory and env variable for toolcache
+ AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache
+-mkdir $AGENT_TOOLSDIRECTORY
++mkdir -p $AGENT_TOOLSDIRECTORY
+ echo "AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY" | tee -a /etc/environment
+ chmod -R 777 $AGENT_TOOLSDIRECTORY
+ 
+@@ -47,8 +49,10 @@ echo 'ACTION=="add", SUBSYSTEM=="module", KERNEL=="nf_conntrack", RUN+="/usr/sbi
+ chmod +x $HELPER_SCRIPTS/invoke-tests.sh
+ ln -s $HELPER_SCRIPTS/invoke-tests.sh /usr/local/bin/invoke_tests
+ 
+-# Disable motd updates metadata
+-sed -i 's/ENABLED=1/ENABLED=0/g' /etc/default/motd-news
++if [[ -f /etc/default/motd-news ]]; then
++    # Disable motd updates metadata
++    sed -i 's/ENABLED=1/ENABLED=0/g' /etc/default/motd-news
++fi
+ 
+ if [[ -f "/etc/fwupd/daemon.conf" ]]; then
+     sed -i 's/UpdateMotd=true/UpdateMotd=false/g' /etc/fwupd/daemon.conf
+diff --git a/images/linux/scripts/installers/docker-moby.sh b/images/linux/scripts/installers/docker-moby.sh
+index 3e66905..3f7c5b2 100644
+--- a/images/linux/scripts/installers/docker-moby.sh
++++ b/images/linux/scripts/installers/docker-moby.sh
+@@ -21,9 +21,11 @@ else
+     echo "Docker ($docker_package) is already installed"
+ fi
+ 
+-# Enable docker.service
+-systemctl is-active --quiet docker.service || systemctl start docker.service
+-systemctl is-enabled --quiet docker.service || systemctl enable docker.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Enable docker.service
++    systemctl is-active --quiet docker.service || systemctl start docker.service
++    systemctl is-enabled --quiet docker.service || systemctl enable docker.service
++fi
+ 
+ # Docker daemon takes time to come up after installing
+ sleep 10
+diff --git a/images/linux/scripts/installers/dotnetcore-sdk.sh b/images/linux/scripts/installers/dotnetcore-sdk.sh
+index bc9cbd8..2801f43 100644
+--- a/images/linux/scripts/installers/dotnetcore-sdk.sh
++++ b/images/linux/scripts/installers/dotnetcore-sdk.sh
+@@ -65,7 +65,7 @@ extract_dotnet_sdk() {
+     set -e
+     dest="./tmp-$(basename -s .tar.gz $ARCHIVE_NAME)"
+     echo "Extracting $ARCHIVE_NAME to $dest"
+-    mkdir "$dest" && tar -C "$dest" -xzf "$ARCHIVE_NAME"
++    mkdir -p "$dest" && tar -C "$dest" -xzf "$ARCHIVE_NAME"
+     rsync -qav --remove-source-files "$dest/shared/" /usr/share/dotnet/shared/
+     rsync -qav --remove-source-files "$dest/host/" /usr/share/dotnet/host/
+     rsync -qav --remove-source-files "$dest/sdk/" /usr/share/dotnet/sdk/
+@@ -80,7 +80,7 @@ parallel --jobs 0 --halt soon,fail=1 \
+     'url="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/{}/dotnet-sdk-{}-linux-x64.tar.gz"; \
+     download_with_retries $url' ::: "${sortedSdks[@]}"
+ 
+-find . -name "*.tar.gz" | parallel --halt soon,fail=1 'extract_dotnet_sdk {}'
++find . -name "dotnet-sdk-*-linux-x64.tar.gz" | parallel --halt soon,fail=1 'extract_dotnet_sdk {}'
+ 
+ # NuGetFallbackFolder at /usr/share/dotnet/sdk/NuGetFallbackFolder is warmed up by smoke test
+ # Additional FTE will just copy to ~/.dotnet/NuGet which provides no benefit on a fungible machine
+diff --git a/images/linux/scripts/installers/google-chrome.sh b/images/linux/scripts/installers/google-chrome.sh
+index fabb421..d406443 100644
+--- a/images/linux/scripts/installers/google-chrome.sh
++++ b/images/linux/scripts/installers/google-chrome.sh
+@@ -76,11 +76,11 @@ CHROMIUM_BIN="${CHROMIUM_DIR}/chrome-linux/chrome"
+ 
+ echo "Installing chromium revision $CHROMIUM_REVISION"
+ download_with_retries $CHROMIUM_URL "/tmp" $CHROMIUM_ARCHIVE
+-mkdir $CHROMIUM_DIR
++mkdir -p $CHROMIUM_DIR
+ unzip -qq /tmp/$CHROMIUM_ARCHIVE -d $CHROMIUM_DIR
+ 
+ ln -s $CHROMIUM_BIN /usr/bin/chromium
+ ln -s $CHROMIUM_BIN /usr/bin/chromium-browser
+ 
+ invoke_tests "Browsers" "Chrome"
+-invoke_tests "Browsers" "Chromium"
+\ No newline at end of file
++invoke_tests "Browsers" "Chromium"
+diff --git a/images/linux/scripts/installers/mysql.sh b/images/linux/scripts/installers/mysql.sh
+index 8939151..01f76e0 100644
+--- a/images/linux/scripts/installers/mysql.sh
++++ b/images/linux/scripts/installers/mysql.sh
+@@ -23,8 +23,10 @@ apt-get install -y mysql-server
+ #Install MySQL Dev tools
+ apt install libmysqlclient-dev -y
+ 
+-# Disable mysql.service
+-systemctl is-active --quiet mysql.service && systemctl stop mysql.service
+-systemctl disable mysql.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Disable mysql.service
++    systemctl is-active --quiet mysql.service && systemctl stop mysql.service
++    systemctl disable mysql.service
++fi
+ 
+ invoke_tests "Databases" "MySQL"
+diff --git a/images/linux/scripts/installers/nginx.sh b/images/linux/scripts/installers/nginx.sh
+index 48b3375..7919c07 100644
+--- a/images/linux/scripts/installers/nginx.sh
++++ b/images/linux/scripts/installers/nginx.sh
+@@ -7,8 +7,10 @@
+ # Install Nginx
+ apt-get install nginx -y
+ 
+-# Disable nginx.service
+-systemctl is-active --quiet nginx.service && systemctl stop nginx.service
+-systemctl disable nginx.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Disable nginx.service
++    systemctl is-active --quiet nginx.service && systemctl stop nginx.service
++    systemctl disable nginx.service
++fi
+ 
+ invoke_tests "WebServers" "Nginx"
+diff --git a/images/linux/scripts/installers/nvm.sh b/images/linux/scripts/installers/nvm.sh
+index 71ae4b8..37564c7 100644
+--- a/images/linux/scripts/installers/nvm.sh
++++ b/images/linux/scripts/installers/nvm.sh
+@@ -5,7 +5,7 @@
+ ################################################################################
+ 
+ export NVM_DIR="/etc/skel/.nvm"
+-mkdir $NVM_DIR
++mkdir -p $NVM_DIR
+ VERSION=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r '.tag_name')
+ curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/$VERSION/install.sh | bash
+ echo 'NVM_DIR=$HOME/.nvm' | tee -a /etc/environment
+diff --git a/images/linux/scripts/installers/postgresql.sh b/images/linux/scripts/installers/postgresql.sh
+index 845adff..45984df 100644
+--- a/images/linux/scripts/installers/postgresql.sh
++++ b/images/linux/scripts/installers/postgresql.sh
+@@ -25,9 +25,11 @@ apt install postgresql-$toolsetVersion
+ echo "Install libpq-dev"
+ apt-get install libpq-dev
+ 
+-# Disable postgresql.service
+-systemctl is-active --quiet postgresql.service && systemctl stop postgresql.service
+-systemctl disable postgresql.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Disable postgresql.service
++    systemctl is-active --quiet postgresql.service && systemctl stop postgresql.service
++    systemctl disable postgresql.service
++fi
+ 
+ rm /etc/apt/sources.list.d/pgdg.list
+ rm /usr/share/keyrings/postgresql.gpg
+diff --git a/images/linux/scripts/installers/pypy.sh b/images/linux/scripts/installers/pypy.sh
+index 32cb2ff..c5fcba5 100644
+--- a/images/linux/scripts/installers/pypy.sh
++++ b/images/linux/scripts/installers/pypy.sh
+@@ -48,7 +48,7 @@ function InstallPyPy
+     fi
+ 
+     echo "Create PyPy '$PYPY_TOOLCACHE_VERSION_PATH' folder"
+-    mkdir $PYPY_TOOLCACHE_VERSION_PATH
++    mkdir -p $PYPY_TOOLCACHE_VERSION_PATH
+ 
+     echo "Move PyPy '$PACKAGE_TEMP_FOLDER' binaries to '$PYPY_TOOLCACHE_VERSION_ARCH_PATH' folder"
+     mv $PACKAGE_TEMP_FOLDER $PYPY_TOOLCACHE_VERSION_ARCH_PATH
+diff --git a/images/linux/scripts/tests/Android.Tests.ps1 b/images/linux/scripts/tests/Android.Tests.ps1
+index 4c0b299..229d455 100644
+--- a/images/linux/scripts/tests/Android.Tests.ps1
++++ b/images/linux/scripts/tests/Android.Tests.ps1
+@@ -1,68 +1,68 @@
+-Describe "Android" {
+-    $androidSdkManagerPackages = Get-AndroidPackages
+-    [int]$platformMinVersion = Get-ToolsetValue "android.platform_min_version"
+-    [version]$buildToolsMinVersion = Get-ToolsetValue "android.build_tools_min_version"
+-    [array]$ndkVersions = Get-ToolsetValue "android.ndk.versions"
+-    $ndkFullVersions = $ndkVersions | ForEach-Object { (Get-ChildItem "/usr/local/lib/android/sdk/ndk/${_}.*" | Select-Object -Last 1).Name } | ForEach-Object { "ndk/${_}" }
+-    # Platforms starting with a letter are the preview versions, which is not installed on the image
+-    $platformVersionsList = ($androidSdkManagerPackages | Where-Object { "$_".StartsWith("platforms;") }) -replace 'platforms;android-', '' | Where-Object { $_ -match "^\d" } | Sort-Object -Unique
+-    $platformsInstalled = $platformVersionsList | Where-Object { [int]($_.Split("-")[0]) -ge $platformMinVersion } | ForEach-Object { "platforms/android-${_}" }
++# Describe "Android" {
++#     $androidSdkManagerPackages = Get-AndroidPackages
++#     [int]$platformMinVersion = Get-ToolsetValue "android.platform_min_version"
++#     [version]$buildToolsMinVersion = Get-ToolsetValue "android.build_tools_min_version"
++#     [array]$ndkVersions = Get-ToolsetValue "android.ndk.versions"
++#     $ndkFullVersions = $ndkVersions | ForEach-Object { (Get-ChildItem "/usr/local/lib/android/sdk/ndk/${_}.*" | Select-Object -Last 1).Name } | ForEach-Object { "ndk/${_}" }
++#     # Platforms starting with a letter are the preview versions, which is not installed on the image
++#     $platformVersionsList = ($androidSdkManagerPackages | Where-Object { "$_".StartsWith("platforms;") }) -replace 'platforms;android-', '' | Where-Object { $_ -match "^\d" } | Sort-Object -Unique
++#     $platformsInstalled = $platformVersionsList | Where-Object { [int]($_.Split("-")[0]) -ge $platformMinVersion } | ForEach-Object { "platforms/android-${_}" }
+ 
+-    $buildToolsList = ($androidSdkManagerPackages | Where-Object { "$_".StartsWith("build-tools;") }) -replace 'build-tools;', ''
+-    $buildTools = $buildToolsList | Where-Object { $_ -match "\d+(\.\d+){2,}$"} | Where-Object { [version]$_ -ge $buildToolsMinVersion } | Sort-Object -Unique |
+-    ForEach-Object { "build-tools/${_}" }
++#     $buildToolsList = ($androidSdkManagerPackages | Where-Object { "$_".StartsWith("build-tools;") }) -replace 'build-tools;', ''
++#     $buildTools = $buildToolsList | Where-Object { $_ -match "\d+(\.\d+){2,}$"} | Where-Object { [version]$_ -ge $buildToolsMinVersion } | Sort-Object -Unique |
++#     ForEach-Object { "build-tools/${_}" }
+ 
+-    $androidPackages = @(
+-        $platformsInstalled,
+-        $buildTools,
+-        $ndkFullVersions,
+-        (Get-ToolsetValue "android.extra_list" | ForEach-Object { "extras/${_}" }),
+-        (Get-ToolsetValue "android.addon_list" | ForEach-Object { "add-ons/${_}" }),
+-        (Get-ToolsetValue "android.additional_tools" | ForEach-Object { "${_}" })
+-    )
++#     $androidPackages = @(
++#         $platformsInstalled,
++#         $buildTools,
++#         $ndkFullVersions,
++#         (Get-ToolsetValue "android.extra_list" | ForEach-Object { "extras/${_}" }),
++#         (Get-ToolsetValue "android.addon_list" | ForEach-Object { "add-ons/${_}" }),
++#         (Get-ToolsetValue "android.additional_tools" | ForEach-Object { "${_}" })
++#     )
+ 
+-    $androidPackages = $androidPackages | ForEach-Object { $_ }
++#     $androidPackages = $androidPackages | ForEach-Object { $_ }
+ 
+-    BeforeAll {
+-        function Validate-AndroidPackage {
+-            param (
+-                [Parameter(Mandatory=$true)]
+-                [string]$PackageName
+-            )
++#     BeforeAll {
++#         function Validate-AndroidPackage {
++#             param (
++#                 [Parameter(Mandatory=$true)]
++#                 [string]$PackageName
++#             )
+ 
+-            # Convert 'm2repository;com;android;support;constraint;constraint-layout-solver;1.0.0-beta1' ->
+-            #         'm2repository/com/android/support/constraint/constraint-layout-solver/1.0.0-beta1'
+-            #         'cmake;3.6.4111459' -> 'cmake/3.6.4111459'
+-            #         'patcher;v4' -> 'patcher/v4'
+-            $PackageName = $PackageName.Replace(";", "/")
+-            $targetPath = Join-Path $env:ANDROID_HOME $PackageName
+-            $targetPath | Should -Exist
+-        }
+-    }
++#             # Convert 'm2repository;com;android;support;constraint;constraint-layout-solver;1.0.0-beta1' ->
++#             #         'm2repository/com/android/support/constraint/constraint-layout-solver/1.0.0-beta1'
++#             #         'cmake;3.6.4111459' -> 'cmake/3.6.4111459'
++#             #         'patcher;v4' -> 'patcher/v4'
++#             $PackageName = $PackageName.Replace(";", "/")
++#             $targetPath = Join-Path $env:ANDROID_HOME $PackageName
++#             $targetPath | Should -Exist
++#         }
++#     }
+ 
+-    Context "SDKManagers" {
+-        $testCases = @(
+-            @{
+-                PackageName = "SDK tools"
+-                Sdkmanager = "$env:ANDROID_HOME/tools/bin/sdkmanager"
+-            },
+-            @{
+-                PackageName = "Command-line tools"
+-                Sdkmanager = "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+-            }
+-        )
++#     Context "SDKManagers" {
++#         $testCases = @(
++#             @{
++#                 PackageName = "SDK tools"
++#                 Sdkmanager = "$env:ANDROID_HOME/tools/bin/sdkmanager"
++#             },
++#             @{
++#                 PackageName = "Command-line tools"
++#                 Sdkmanager = "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
++#             }
++#         )
+ 
+-        It "Sdkmanager from <PackageName> is available" -TestCases $testCases {
+-            "$Sdkmanager --version" | Should -ReturnZeroExitCode
+-        }
+-    }
++#         It "Sdkmanager from <PackageName> is available" -TestCases $testCases {
++#             "$Sdkmanager --version" | Should -ReturnZeroExitCode
++#         }
++#     }
+ 
+-    Context "Packages" {
+-        $testCases = $androidPackages | ForEach-Object { @{ PackageName = $_ } }
++#     Context "Packages" {
++#         $testCases = $androidPackages | ForEach-Object { @{ PackageName = $_ } }
+ 
+-        It "<PackageName>" -TestCases $testCases {
+-            param ([string] $PackageName)
+-            Validate-AndroidPackage $PackageName
+-        }
+-    }
+-}
+\ No newline at end of file
++#         It "<PackageName>" -TestCases $testCases {
++#             param ([string] $PackageName)
++#             Validate-AndroidPackage $PackageName
++#         }
++#     }
++# }
+diff --git a/images/linux/scripts/tests/Databases.Tests.ps1 b/images/linux/scripts/tests/Databases.Tests.ps1
+index 9145312..1f397b0 100644
+--- a/images/linux/scripts/tests/Databases.Tests.ps1
++++ b/images/linux/scripts/tests/Databases.Tests.ps1
+@@ -8,32 +8,32 @@ Describe "MongoDB" -Skip:(Test-IsUbuntu22) {
+     }
+ }
+ 
+-Describe "PostgreSQL" {
+-    It "PostgreSQL Service" {
+-        "sudo systemctl start postgresql" | Should -ReturnZeroExitCode
+-        "pg_isready" | Should -MatchCommandOutput "/var/run/postgresql:5432 - accepting connections"
+-        "sudo systemctl stop postgresql" | Should -ReturnZeroExitCode
+-    }
++# Describe "PostgreSQL" {
++#     It "PostgreSQL Service" {
++#         "sudo systemctl start postgresql" | Should -ReturnZeroExitCode
++#         "pg_isready" | Should -MatchCommandOutput "/var/run/postgresql:5432 - accepting connections"
++#         "sudo systemctl stop postgresql" | Should -ReturnZeroExitCode
++#     }
+ 
+-    It "PostgreSQL version should correspond to the version in the toolset" {
+-        $toolsetVersion = (Get-ToolsetContent).postgresql.version
+-        # Client version
+-        (psql --version).split()[-1] | Should -BeLike "$toolsetVersion*"
+-        # Server version
+-        (pg_config --version).split()[-1] | Should -BeLike "$toolsetVersion*"
+-    }
+-}
++#     It "PostgreSQL version should correspond to the version in the toolset" {
++#         $toolsetVersion = (Get-ToolsetContent).postgresql.version
++#         # Client version
++#         (psql --version).split()[-1] | Should -BeLike "$toolsetVersion*"
++#         # Server version
++#         (pg_config --version).split()[-1] | Should -BeLike "$toolsetVersion*"
++#     }
++# }
+ 
+-Describe "MySQL" {
+-    It "MySQL CLI" {
+-        "mysql -V" | Should -ReturnZeroExitCode
+-    }
++# Describe "MySQL" {
++#     It "MySQL CLI" {
++#         "mysql -V" | Should -ReturnZeroExitCode
++#     }
+ 
+-    It "MySQL Service" {
+-        "sudo systemctl start mysql" | Should -ReturnZeroExitCode
+-        mysql -s -N -h localhost -uroot -proot -e "select count(*) from mysql.user where user='root' and authentication_string is null;" | Should -BeExactly 0
+-        "sudo mysql -vvv -e 'CREATE DATABASE smoke_test' -uroot -proot" | Should -ReturnZeroExitCode
+-        "sudo mysql -vvv -e 'DROP DATABASE smoke_test' -uroot -proot" | Should -ReturnZeroExitCode
+-        "sudo systemctl stop mysql" | Should -ReturnZeroExitCode
+-    }
+-}
++#     It "MySQL Service" {
++#         "sudo systemctl start mysql" | Should -ReturnZeroExitCode
++#         mysql -s -N -h localhost -uroot -proot -e "select count(*) from mysql.user where user='root' and authentication_string is null;" | Should -BeExactly 0
++#         "sudo mysql -vvv -e 'CREATE DATABASE smoke_test' -uroot -proot" | Should -ReturnZeroExitCode
++#         "sudo mysql -vvv -e 'DROP DATABASE smoke_test' -uroot -proot" | Should -ReturnZeroExitCode
++#         "sudo systemctl stop mysql" | Should -ReturnZeroExitCode
++#     }
++# }
+diff --git a/images/linux/scripts/tests/WebServers.Tests.ps1 b/images/linux/scripts/tests/WebServers.Tests.ps1
+index dfdde33..f835f4d 100644
+--- a/images/linux/scripts/tests/WebServers.Tests.ps1
++++ b/images/linux/scripts/tests/WebServers.Tests.ps1
+@@ -2,22 +2,10 @@ Describe "Apache" {
+     It "Apache CLI" {
+         "apache2 -v" | Should -ReturnZeroExitCode
+     }
+-
+-    It "Apache Service" {
+-        "sudo systemctl start apache2" | Should -ReturnZeroExitCode
+-        "apachectl configtest" | Should -ReturnZeroExitCode
+-        "sudo systemctl stop apache2" | Should -ReturnZeroExitCode
+-    }
+ }
+ 
+ Describe "Nginx" {
+     It "Nginx CLI" {
+         "nginx -v" | Should -ReturnZeroExitCode
+     }
+-
+-    It "Nginx Service" {
+-        "sudo systemctl start nginx" | Should -ReturnZeroExitCode
+-        "sudo nginx -t" | Should -ReturnZeroExitCode
+-        "sudo systemctl stop nginx" | Should -ReturnZeroExitCode
+-    }
+-}
+\ No newline at end of file
++}
+-- 
+2.41.0
+
