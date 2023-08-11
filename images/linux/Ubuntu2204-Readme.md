@@ -1,7 +1,7 @@
 # Ubuntu 22.04
 - OS Version: 22.04.3 LTS
 - Kernel Version: 5.15.49-linuxkit-pr
-- Image Version: dev
+- Image Version: 20230806.1.1
 - Systemd version: 249.11-0ubuntu3.9
 
 ## Installed Software
@@ -21,7 +21,6 @@
 - Node.js 18.17.1
 - Perl 5.34.0
 - Python 3.10.12
-- Python3 3.10.12
 - Ruby 3.0.2p107
 - Swift 5.8.1
 
@@ -112,17 +111,17 @@ to accomplish this.
 - GitHub CLI 2.32.1
 - Google Cloud SDK 442.0.0
 - Hub CLI 2.14.2
-- Netlify CLI 16.0.1
+- Netlify CLI 16.0.2
 - OpenShift CLI 4.13.8
 - ORAS CLI 1.0.1
 - Vercel CLI 31.2.3
 
 ### Java
-| Version             | Vendor          | Environment Variable |
-| ------------------- | --------------- | -------------------- |
-| 8.0.382+5           | Eclipse Temurin | JAVA_HOME_8_X64      |
-| 11.0.20+8 (default) | Eclipse Temurin | JAVA_HOME_11_X64     |
-| 17.0.8+7            | Eclipse Temurin | JAVA_HOME_17_X64     |
+| Version             | Environment Variable |
+| ------------------- | -------------------- |
+| 8.0.382+5           | JAVA_HOME_8_X64      |
+| 11.0.20+8 (default) | JAVA_HOME_11_X64     |
+| 17.0.8+7            | JAVA_HOME_17_X64     |
 
 ### PHP Tools
 - PHP: 8.1.2
