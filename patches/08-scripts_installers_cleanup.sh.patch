@@ -1,0 +1,36 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/cleanup.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/cleanup.sh b/images/linux/scripts/installers/cleanup.sh
+index 8120144..6f71a8d 100644
+--- a/images/linux/scripts/installers/cleanup.sh
++++ b/images/linux/scripts/installers/cleanup.sh
+@@ -9,10 +9,12 @@ apt-get clean
+ rm -rf /tmp/*
+ rm -rf /root/.cache
+
+-# journalctl
+-if command -v journalctl; then
+-    journalctl --rotate
+-    journalctl --vacuum-time=1s
++if [[ ! -f /run/systemd/container ]]; then
++    # journalctl
++    if command -v journalctl; then
++        journalctl --rotate
++        journalctl --vacuum-time=1s
++    fi
+ fi
+
+ # delete all .gz and rotated file
+@@ -31,4 +33,4 @@ after=$(df / -Pm | awk 'NR==2{print $4}')
+  echo "Delta : $(($after-$before)) MB"
+
+ # delete symlink for tests running
+-rm -f /usr/local/bin/invoke_tests
+\ No newline at end of file
++rm -f /usr/local/bin/invoke_tests

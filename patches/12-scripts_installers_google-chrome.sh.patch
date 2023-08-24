@@ -1,0 +1,27 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/google-chrome.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/google-chrome.sh b/images/linux/scripts/installers/google-chrome.sh
+index fabb421..d406443 100644
+--- a/images/linux/scripts/installers/google-chrome.sh
++++ b/images/linux/scripts/installers/google-chrome.sh
+@@ -76,11 +76,11 @@ CHROMIUM_BIN="${CHROMIUM_DIR}/chrome-linux/chrome"
+
+ echo "Installing chromium revision $CHROMIUM_REVISION"
+ download_with_retries $CHROMIUM_URL "/tmp" $CHROMIUM_ARCHIVE
+-mkdir $CHROMIUM_DIR
++mkdir -p $CHROMIUM_DIR
+ unzip -qq /tmp/$CHROMIUM_ARCHIVE -d $CHROMIUM_DIR
+
+ ln -s $CHROMIUM_BIN /usr/bin/chromium
+ ln -s $CHROMIUM_BIN /usr/bin/chromium-browser
+
+ invoke_tests "Browsers" "Chrome"
+-invoke_tests "Browsers" "Chromium"
+\ No newline at end of file
++invoke_tests "Browsers" "Chromium"

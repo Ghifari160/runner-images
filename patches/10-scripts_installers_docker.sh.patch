@@ -1,0 +1,33 @@
+From b596df37f01a50f0316010fee159559f80cae7fd Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Thu, 24 Aug 2023 04:27:03 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/docker.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+---
+ images/linux/scripts/installers/docker.sh | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/images/linux/scripts/installers/docker.sh b/images/linux/scripts/installers/docker.sh
+index 50b85c1..4963b1a 100644
+--- a/images/linux/scripts/installers/docker.sh
++++ b/images/linux/scripts/installers/docker.sh
+@@ -22,9 +22,11 @@ URL=$(get_github_package_download_url "docker/compose" "contains(\"compose-linux
+ curl -fsSL $URL -o /usr/libexec/docker/cli-plugins/docker-compose
+ chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+ 
+-# Enable docker.service
+-systemctl is-active --quiet docker.service || systemctl start docker.service
+-systemctl is-enabled --quiet docker.service || systemctl enable docker.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Enable docker.service
++    systemctl is-active --quiet docker.service || systemctl start docker.service
++    systemctl is-enabled --quiet docker.service || systemctl enable docker.service
++fi
+ 
+ # Docker daemon takes time to come up after installing
+ sleep 10
+-- 
+2.42.0
+

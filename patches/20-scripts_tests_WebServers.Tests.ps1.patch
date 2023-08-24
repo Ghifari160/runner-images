@@ -1,0 +1,37 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/tests/WebServers.Tests.ps1
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/tests/WebServers.Tests.ps1 b/images/linux/scripts/tests/WebServers.Tests.ps1
+index dfdde33..f835f4d 100644
+--- a/images/linux/scripts/tests/WebServers.Tests.ps1
++++ b/images/linux/scripts/tests/WebServers.Tests.ps1
+@@ -2,22 +2,10 @@ Describe "Apache" {
+     It "Apache CLI" {
+         "apache2 -v" | Should -ReturnZeroExitCode
+     }
+-
+-    It "Apache Service" {
+-        "sudo systemctl start apache2" | Should -ReturnZeroExitCode
+-        "apachectl configtest" | Should -ReturnZeroExitCode
+-        "sudo systemctl stop apache2" | Should -ReturnZeroExitCode
+-    }
+ }
+
+ Describe "Nginx" {
+     It "Nginx CLI" {
+         "nginx -v" | Should -ReturnZeroExitCode
+     }
+-
+-    It "Nginx Service" {
+-        "sudo systemctl start nginx" | Should -ReturnZeroExitCode
+-        "sudo nginx -t" | Should -ReturnZeroExitCode
+-        "sudo systemctl stop nginx" | Should -ReturnZeroExitCode
+-    }
+-}
+\ No newline at end of file
++}

@@ -1,0 +1,24 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/base/snap.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/base/snap.sh b/images/linux/scripts/base/snap.sh
+index 6d38c2e..da07c81 100644
+--- a/images/linux/scripts/base/snap.sh
++++ b/images/linux/scripts/base/snap.sh
+@@ -9,6 +9,8 @@
+ # a unix socket may die, restart snapd.service (and therefore snapd.socket)
+ # to make sure the socket is alive.
+
+-systemctl restart snapd.socket
+-systemctl restart snapd
+-snap set system refresh.hold="$(date --date='today+60 days' +%Y-%m-%dT%H:%M:%S%:z)"
++if [[ ! -f /run/systemd/container ]]; then
++    systemctl restart snapd.socket
++    systemctl restart snapd
++    snap set system refresh.hold="$(date --date='today+60 days' +%Y-%m-%dT%H:%M:%S%:z)"
++fi

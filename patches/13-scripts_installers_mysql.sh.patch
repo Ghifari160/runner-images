@@ -1,0 +1,26 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/mysql.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/mysql.sh b/images/linux/scripts/installers/mysql.sh
+index 8939151..01f76e0 100644
+--- a/images/linux/scripts/installers/mysql.sh
++++ b/images/linux/scripts/installers/mysql.sh
+@@ -23,8 +23,10 @@ apt-get install -y mysql-server
+ #Install MySQL Dev tools
+ apt install libmysqlclient-dev -y
+
+-# Disable mysql.service
+-systemctl is-active --quiet mysql.service && systemctl stop mysql.service
+-systemctl disable mysql.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Disable mysql.service
++    systemctl is-active --quiet mysql.service && systemctl stop mysql.service
++    systemctl disable mysql.service
++fi
+
+ invoke_tests "Databases" "MySQL"

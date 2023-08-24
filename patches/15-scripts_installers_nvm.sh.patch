@@ -1,0 +1,21 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/nvm.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/nvm.sh b/images/linux/scripts/installers/nvm.sh
+index 71ae4b8..37564c7 100644
+--- a/images/linux/scripts/installers/nvm.sh
++++ b/images/linux/scripts/installers/nvm.sh
+@@ -5,7 +5,7 @@
+ ################################################################################
+
+ export NVM_DIR="/etc/skel/.nvm"
+-mkdir $NVM_DIR
++mkdir -p $NVM_DIR
+ VERSION=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r '.tag_name')
+ curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/$VERSION/install.sh | bash
+ echo 'NVM_DIR=$HOME/.nvm' | tee -a /etc/environment

@@ -1,0 +1,21 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/pypy.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/pypy.sh b/images/linux/scripts/installers/pypy.sh
+index 32cb2ff..c5fcba5 100644
+--- a/images/linux/scripts/installers/pypy.sh
++++ b/images/linux/scripts/installers/pypy.sh
+@@ -48,7 +48,7 @@ function InstallPyPy
+     fi
+
+     echo "Create PyPy '$PYPY_TOOLCACHE_VERSION_PATH' folder"
+-    mkdir $PYPY_TOOLCACHE_VERSION_PATH
++    mkdir -p $PYPY_TOOLCACHE_VERSION_PATH
+
+     echo "Move PyPy '$PACKAGE_TEMP_FOLDER' binaries to '$PYPY_TOOLCACHE_VERSION_ARCH_PATH' folder"
+     mv $PACKAGE_TEMP_FOLDER $PYPY_TOOLCACHE_VERSION_ARCH_PATH

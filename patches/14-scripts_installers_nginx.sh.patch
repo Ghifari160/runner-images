@@ -1,0 +1,26 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/nginx.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/nginx.sh b/images/linux/scripts/installers/nginx.sh
+index 48b3375..7919c07 100644
+--- a/images/linux/scripts/installers/nginx.sh
++++ b/images/linux/scripts/installers/nginx.sh
+@@ -7,8 +7,10 @@
+ # Install Nginx
+ apt-get install nginx -y
+
+-# Disable nginx.service
+-systemctl is-active --quiet nginx.service && systemctl stop nginx.service
+-systemctl disable nginx.service
++if [[ ! -f /run/systemd/container ]]; then
++    # Disable nginx.service
++    systemctl is-active --quiet nginx.service && systemctl stop nginx.service
++    systemctl disable nginx.service
++fi
+
+ invoke_tests "WebServers" "Nginx"

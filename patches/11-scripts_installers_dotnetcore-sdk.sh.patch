@@ -1,0 +1,30 @@
+From 64dc282ff487e9326aa443bd5aa43895a95b0457 Mon Sep 17 00:00:00 2001
+From: GHIFARI160 <ghifari@ghifari160.com>
+Date: Sun, 30 Jul 2023 03:25:44 -0500
+Subject: [PATCH] Modify images/linux/scripts/installers/dotnetcore-sdk.sh
+
+These scripts assumes the builder runs as a virtual machine or a bare
+metal system. Modify them to work in a Docker container.
+
+diff --git a/images/linux/scripts/installers/dotnetcore-sdk.sh b/images/linux/scripts/installers/dotnetcore-sdk.sh
+index bc9cbd8..2801f43 100644
+--- a/images/linux/scripts/installers/dotnetcore-sdk.sh
++++ b/images/linux/scripts/installers/dotnetcore-sdk.sh
+@@ -65,7 +65,7 @@ extract_dotnet_sdk() {
+     set -e
+     dest="./tmp-$(basename -s .tar.gz $ARCHIVE_NAME)"
+     echo "Extracting $ARCHIVE_NAME to $dest"
+-    mkdir "$dest" && tar -C "$dest" -xzf "$ARCHIVE_NAME"
++    mkdir -p "$dest" && tar -C "$dest" -xzf "$ARCHIVE_NAME"
+     rsync -qav --remove-source-files "$dest/shared/" /usr/share/dotnet/shared/
+     rsync -qav --remove-source-files "$dest/host/" /usr/share/dotnet/host/
+     rsync -qav --remove-source-files "$dest/sdk/" /usr/share/dotnet/sdk/
+@@ -80,7 +80,7 @@ parallel --jobs 0 --halt soon,fail=1 \
+     'url="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/{}/dotnet-sdk-{}-linux-x64.tar.gz"; \
+     download_with_retries $url' ::: "${sortedSdks[@]}"
+
+-find . -name "*.tar.gz" | parallel --halt soon,fail=1 'extract_dotnet_sdk {}'
++find . -name "dotnet-sdk-*-linux-x64.tar.gz" | parallel --halt soon,fail=1 'extract_dotnet_sdk {}'
+
+ # NuGetFallbackFolder at /usr/share/dotnet/sdk/NuGetFallbackFolder is warmed up by smoke test
+ # Additional FTE will just copy to ~/.dotnet/NuGet which provides no benefit on a fungible machine
