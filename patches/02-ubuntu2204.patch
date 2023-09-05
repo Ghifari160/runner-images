@@ -1,18 +1,21 @@
-From 5b1cd21d8ed29c68dccbefbe7bf946f8e2ac93b5 Mon Sep 17 00:00:00 2001
+From 9e3e2d37208cb1b75a238645f1d6e1e2782db561 Mon Sep 17 00:00:00 2001
 From: GHIFARI160 <ghifari@ghifari160.com>
-Date: Thu, 10 Aug 2023 16:27:01 -0500
+Date: Tue, 5 Sep 2023 11:46:29 -0500
 Subject: [PATCH] Modify ubuntu2204 template
 
 Modify the template to build a Docker image.
 ---
- images/linux/ubuntu2204.pkr.hcl | 194 +++++++-------------------------
- 1 file changed, 41 insertions(+), 153 deletions(-)
+ images/linux/ubuntu2204.pkr.hcl | 190 +++++++-------------------------
+ 1 file changed, 41 insertions(+), 149 deletions(-)
 
 diff --git a/images/linux/ubuntu2204.pkr.hcl b/images/linux/ubuntu2204.pkr.hcl
-index 7225623..5e29af6 100644
+index 0001838..b73a507 100644
 --- a/images/linux/ubuntu2204.pkr.hcl
 +++ b/images/linux/ubuntu2204.pkr.hcl
-@@ -1,41 +1,4 @@
+@@ -1,44 +1,4 @@
+-locals {
+-  managed_image_name = var.managed_image_name != "" ? var.managed_image_name : "packer-${var.image_os}-${var.image_version}"
+-}
 -
 -variable "allowed_inbound_ip_addresses" {
 -  type    = list(string)
@@ -29,9 +32,9 @@ index 7225623..5e29af6 100644
 -  default = "${env("BUILD_RESOURCE_GROUP_NAME")}"
 -}
 -
--variable "capture_name_prefix" {
+-variable "managed_image_name" {
 -  type    = string
--  default = "packer"
+-  default = ""
 -}
 -
 -variable "client_id" {
@@ -55,7 +58,7 @@ index 7225623..5e29af6 100644
    type      = string
    default   = ""
  }
-@@ -80,111 +43,48 @@ variable "installer_script_folder" {
+@@ -83,104 +43,48 @@ variable "installer_script_folder" {
    default = "/imagegeneration/installers"
  }
  
@@ -74,7 +77,7 @@ index 7225623..5e29af6 100644
 -  default = false
 -}
 -
--variable "resource_group" {
+-variable "managed_image_resource_group_name" {
 -  type    = string
 -  default = "${env("ARM_RESOURCE_GROUP")}"
 -}
@@ -84,11 +87,6 @@ index 7225623..5e29af6 100644
    default = false
  }
  
--variable "storage_account" {
--  type    = string
--  default = "${env("ARM_STORAGE_ACCOUNT")}"
--}
--
 -variable "subscription_id" {
 -  type    = string
 -  default = "${env("ARM_SUBSCRIPTION_ID")}"
@@ -147,11 +145,9 @@ index 7225623..5e29af6 100644
 +build {
 +  sources = ["source.docker.ubuntu-2204"]
  
--source "azure-arm" "build_vhd" {
+-source "azure-arm" "build_image" {
 -  allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
 -  build_resource_group_name              = "${var.build_resource_group_name}"
--  capture_container_name                 = "images"
--  capture_name_prefix                    = "${var.capture_name_prefix}"
 -  client_id                              = "${var.client_id}"
 -  client_secret                          = "${var.client_secret}"
 -  client_cert_path                       = "${var.client_cert_path}"
@@ -162,8 +158,8 @@ index 7225623..5e29af6 100644
 -  os_disk_size_gb                        = "86"
 -  os_type                                = "Linux"
 -  private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
--  resource_group_name                    = "${var.resource_group}"
--  storage_account                        = "${var.storage_account}"
+-  managed_image_name                     = "${local.managed_image_name}"
+-  managed_image_resource_group_name      = "${var.managed_image_resource_group_name}"
 -  subscription_id                        = "${var.subscription_id}"
 -  temp_resource_group_name               = "${var.temp_resource_group_name}"
 -  tenant_id                              = "${var.tenant_id}"
@@ -188,7 +184,7 @@ index 7225623..5e29af6 100644
 -}
 -
 -build {
--  sources = ["source.azure-arm.build_vhd"]
+-  sources = ["source.azure-arm.build_image"]
  
    provisioner "shell" {
      execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
@@ -197,7 +193,7 @@ index 7225623..5e29af6 100644
    }
  
    provisioner "shell" {
-@@ -198,12 +98,6 @@ build {
+@@ -194,12 +98,6 @@ build {
      scripts          = ["${path.root}/scripts/base/repos.sh"]
    }
  
@@ -210,7 +206,7 @@ index 7225623..5e29af6 100644
    provisioner "shell" {
      environment_vars = ["DEBIAN_FRONTEND=noninteractive"]
      execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-@@ -321,7 +215,7 @@ build {
+@@ -311,7 +209,7 @@ build {
                          "${path.root}/scripts/installers/miniconda.sh",
                          "${path.root}/scripts/installers/mono.sh",
                          "${path.root}/scripts/installers/kotlin.sh",
@@ -219,7 +215,7 @@ index 7225623..5e29af6 100644
                          "${path.root}/scripts/installers/mssql-cmd-tools.sh",
                          "${path.root}/scripts/installers/sqlpackage.sh",
                          "${path.root}/scripts/installers/nginx.sh",
-@@ -330,7 +224,7 @@ build {
+@@ -320,7 +218,7 @@ build {
                          "${path.root}/scripts/installers/bazel.sh",
                          "${path.root}/scripts/installers/oras-cli.sh",
                          "${path.root}/scripts/installers/php.sh",
@@ -228,7 +224,7 @@ index 7225623..5e29af6 100644
                          "${path.root}/scripts/installers/pulumi.sh",
                          "${path.root}/scripts/installers/ruby.sh",
                          "${path.root}/scripts/installers/r.sh",
-@@ -343,7 +237,7 @@ build {
+@@ -333,7 +231,7 @@ build {
                          "${path.root}/scripts/installers/vcpkg.sh",
                          "${path.root}/scripts/installers/dpkg-config.sh",
                          "${path.root}/scripts/installers/yq.sh",
@@ -237,7 +233,7 @@ index 7225623..5e29af6 100644
                          "${path.root}/scripts/installers/pypy.sh",
                          "${path.root}/scripts/installers/python.sh",
                          "${path.root}/scripts/installers/zstd.sh"
-@@ -373,12 +267,6 @@ build {
+@@ -369,12 +267,6 @@ build {
      script          = "${path.root}/scripts/base/snap.sh"
    }
  
@@ -250,7 +246,7 @@ index 7225623..5e29af6 100644
    provisioner "shell" {
      execute_command     = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
      pause_before        = "1m0s"
-@@ -393,7 +281,13 @@ build {
+@@ -389,7 +281,13 @@ build {
  
    provisioner "shell" {
      environment_vars = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
@@ -265,7 +261,7 @@ index 7225623..5e29af6 100644
    }
  
    provisioner "file" {
-@@ -428,10 +322,4 @@ build {
+@@ -424,10 +322,4 @@ build {
      execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
      inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2204.conf /etc/vsts/machine_instance.conf"]
    }
@@ -277,5 +273,5 @@ index 7225623..5e29af6 100644
 -
  }
 -- 
-2.41.0
+2.42.0
 

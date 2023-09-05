@@ -9,14 +9,14 @@ locals {
   imagedata_file          = "/imagegeneration/imagedata.json"
 }
 
-variable "image_version" {
-  type    = string
-  default = "main"
+variable "commit_url" {
+  type      = string
+  default   = ""
 }
 
-variable "run_validation_diskspace" {
-  type    = bool
-  default = false
+variable "image_version" {
+  type    = string
+  default = "dev"
 }
 
 source "docker" "ubuntu-2204" {
@@ -52,19 +52,11 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    inline = [
-      "dpkg-reconfigure debconf --frontend=noninteractive",
-      "apt-get -yq update",
-      "apt-get -yq install lsb-release sudo rsync wget apt-utils"
-    ]
-  }
-
   // Create folder to store temporary data
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline = ["mkdir -p ${local.image_folder}",
-    "chmod 777 ${local.image_folder}"]
+    inline          = ["mkdir -p ${local.image_folder}",
+                       "chmod 777 ${local.image_folder}"]
   }
 
   // Add apt wrapper to implement retries

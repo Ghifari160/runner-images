@@ -1,21 +1,25 @@
-From b28a6364ab68c6b8ea08326c02e01b87f2cebc4e Mon Sep 17 00:00:00 2001
+From de1b4120e200db5c05a2c58e9f1e9f24505782a4 Mon Sep 17 00:00:00 2001
 From: GHIFARI160 <ghifari@ghifari160.com>
-Date: Sun, 30 Jul 2023 03:20:44 -0500
+Date: Tue, 5 Sep 2023 11:31:49 -0500
 Subject: [PATCH] Modify ubuntuminimal template
 
 Modify ubuntuminimal template to build Docker images.
 ---
- images/linux/ubuntuminimal.pkr.hcl | 197 ++++++-----------------------
- 1 file changed, 38 insertions(+), 159 deletions(-)
+ images/linux/ubuntuminimal.pkr.hcl | 182 +++++------------------------
+ 1 file changed, 29 insertions(+), 153 deletions(-)
 
 diff --git a/images/linux/ubuntuminimal.pkr.hcl b/images/linux/ubuntuminimal.pkr.hcl
-index f81e1a2..18e9441 100644
+index 6798420..0f43bad 100644
 --- a/images/linux/ubuntuminimal.pkr.hcl
 +++ b/images/linux/ubuntuminimal.pkr.hcl
-@@ -9,70 +9,9 @@ locals {
+@@ -7,44 +7,6 @@ locals {
+   helper_script_folder    = "/imagegeneration/helpers"
+   installer_script_folder = "/imagegeneration/installers"
    imagedata_file          = "/imagegeneration/imagedata.json"
- }
- 
+-
+-  managed_image_name = var.managed_image_name != "" ? var.managed_image_name : "packer-${var.image_os}-${var.image_version}"
+-}
+-
 -variable "allowed_inbound_ip_addresses" {
 -  type    = list(string)
 -  default = []
@@ -31,9 +35,9 @@ index f81e1a2..18e9441 100644
 -  default = "${env("BUILD_RESOURCE_GROUP_NAME")}"
 -}
 -
--variable "capture_name_prefix" {
+-variable "managed_image_name" {
 -  type    = string
--  default = "packer"
+-  default = ""
 -}
 -
 -variable "client_id" {
@@ -50,18 +54,13 @@ index f81e1a2..18e9441 100644
 -variable "client_cert_path" {
 -  type      = string
 -  default   = "${env("ARM_CLIENT_CERT_PATH")}"
--}
--
--variable "commit_url" {
--  type      = string
--  default   = ""
--}
--
- variable "image_version" {
-   type    = string
--  default = "dev"
--}
--
+ }
+ 
+ variable "commit_url" {
+@@ -57,117 +19,43 @@ variable "image_version" {
+   default = "dev"
+ }
+ 
 -variable "install_password" {
 -  type  = string
 -  default = ""
@@ -77,20 +76,14 @@ index f81e1a2..18e9441 100644
 -  default = false
 -}
 -
--variable "resource_group" {
+-variable "managed_image_resource_group_name" {
 -  type    = string
 -  default = "${env("ARM_RESOURCE_GROUP")}"
-+  default = "main"
- }
- 
- variable "run_validation_diskspace" {
-@@ -80,100 +19,52 @@ variable "run_validation_diskspace" {
-   default = false
- }
- 
--variable "storage_account" {
--  type    = string
--  default = "${env("ARM_STORAGE_ACCOUNT")}"
+-}
+-
+-variable "run_validation_diskspace" {
+-  type    = bool
+-  default = false
 -}
 -
 -variable "subscription_id" {
@@ -121,6 +114,11 @@ index f81e1a2..18e9441 100644
 -variable "virtual_network_subnet_name" {
 -  type    = string
 -  default = "${env("VNET_SUBNET")}"
+-}
+-
+-variable "vm_size" {
+-  type    = string
+-  default = "Standard_D4s_v4"
 +source "docker" "ubuntu-2204" {
 +  image            = "ubuntu:22.04"
 +  discard          = false
@@ -143,12 +141,7 @@ index f81e1a2..18e9441 100644
 +  ]
  }
  
--variable "vm_size" {
--  type    = string
--  default = "Standard_D4s_v4"
--}
--
--source "azure-arm" "build_vhd" {
+-source "azure-arm" "build_image" {
 -  location = "${var.location}"
 -
 -  // Auth
@@ -164,10 +157,8 @@ index f81e1a2..18e9441 100644
 -  image_sku       = "22_04-lts"
 -
 -  // Target location
--  storage_account        = "${var.storage_account}"
--  resource_group_name    = "${var.resource_group}"
--  capture_container_name = "images"
--  capture_name_prefix    = "${var.capture_name_prefix}"
+-  managed_image_name = "${local.managed_image_name}"
+-  managed_image_resource_group_name = "${var.managed_image_resource_group_name}"
 -
 -  // Resource group for VM
 -  build_resource_group_name = "${var.build_resource_group_name}"
@@ -201,28 +192,19 @@ index f81e1a2..18e9441 100644
 +    ]
    }
 -}
- 
+-
 -build {
--  sources = ["source.azure-arm.build_vhd"]
-+  provisioner "shell" {
-+    inline = [
-+      "dpkg-reconfigure debconf --frontend=noninteractive",
-+      "apt-get -yq update",
-+      "apt-get -yq install lsb-release sudo rsync wget apt-utils"
-+    ]
-+  }
+-  sources = ["source.azure-arm.build_image"]
  
    // Create folder to store temporary data
    provisioner "shell" {
      execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
 -    inline          = ["mkdir ${local.image_folder}",
--                       "chmod 777 ${local.image_folder}"]
-+    inline = ["mkdir -p ${local.image_folder}",
-+    "chmod 777 ${local.image_folder}"]
++    inline          = ["mkdir -p ${local.image_folder}",
+                        "chmod 777 ${local.image_folder}"]
    }
  
-   // Add apt wrapper to implement retries
-@@ -267,12 +158,6 @@ build {
+@@ -262,12 +150,6 @@ build {
      ]
    }
  
@@ -235,7 +217,7 @@ index f81e1a2..18e9441 100644
    provisioner "shell" {
      execute_command     = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
      pause_before        = "1m0s"
-@@ -295,10 +180,4 @@ build {
+@@ -290,10 +172,4 @@ build {
      environment_vars = ["RUN_VALIDATION=${var.run_validation_diskspace}"]
      scripts          = ["${path.root}/scripts/installers/validate-disk-space.sh"]
    }
@@ -247,5 +229,5 @@ index f81e1a2..18e9441 100644
 -
  }
 -- 
-2.41.0
+2.42.0
 
