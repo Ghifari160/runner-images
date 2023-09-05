@@ -1,7 +1,7 @@
 # Ubuntu 22.04
 - OS Version: 22.04.3 LTS
-- Kernel Version: 5.15.0-1041-azure
-- Image Version: 20230903.1.0
+- Kernel Version: 5.15.49-linuxkit-pr
+- Image Version: 20230903.1
 - Systemd version: 249.11-0ubuntu3.9
 
 ## Installed Software
@@ -25,9 +25,8 @@
 - Swift 5.8.1
 
 ### Package Management
-- cpan 1.64
 - Helm 3.12.3
-- Homebrew 4.1.7
+- Homebrew 4.1.9
 - Miniconda 23.5.2
 - Npm 9.6.7
 - NuGet 6.6.1.2
@@ -57,7 +56,6 @@ to accomplish this.
 - Maven 3.8.8
 
 ### Tools
-- Ansible 2.15.3
 - apt-fast 1.9.12
 - AzCopy 10.20.1 - available by `azcopy` and `azcopy10` aliases
 - Bazel 6.3.2
@@ -71,7 +69,7 @@ to accomplish this.
 - Docker Compose v2 2.21.0
 - Docker-Buildx 0.11.2
 - Docker Client 24.0.5
-- Docker Server 24.0.5
+- Docker Server 24.0.2
 - Fastlane 2.214.0
 - Git 2.42.0
 - Git LFS 3.4.0
@@ -108,14 +106,14 @@ to accomplish this.
 - AWS CLI 2.13.15
 - AWS CLI Session Manager Plugin 1.2.497.0
 - AWS SAM CLI 1.96.0
-- Azure CLI 2.51.0
+- Azure CLI 2.52.0
 - Azure CLI (azure-devops) 0.26.0
 - GitHub CLI 2.33.0
 - Google Cloud SDK 444.0.0
 - Hub CLI 2.14.2
 - Netlify CLI 16.2.0
-- OpenShift CLI 4.13.10
-- ORAS CLI 1.0.1
+- OpenShift CLI 4.13.11
+- ORAS CLI 1.1.0
 - Vercel CLI 32.1.0
 
 ### Java
@@ -154,7 +152,7 @@ Both Xdebug and PCOV extensions are installed, but only Xdebug is enabled.
 - Rustfmt 1.6.0
 
 ### Browsers and Drivers
-- Google Chrome 116.0.5845.140
+- Google Chrome 116.0.5845.179
 - ChromeDriver 116.0.5845.96
 - Chromium 116.0.5845.0
 - Microsoft Edge 116.0.1938.69
@@ -177,23 +175,6 @@ Both Xdebug and PCOV extensions are installed, but only Xdebug is enabled.
 
 ### Databases
 - sqlite3 3.37.2
-
-#### PostgreSQL
-- PostgreSQL 14.9
-```
-User: postgres
-PostgreSQL service is disabled by default.
-Use the following command as a part of your job to start the service: 'sudo systemctl start postgresql.service'
-```
-
-#### MySQL
-- MySQL 8.0.34-0ubuntu0.22.04.1
-```
-User: root
-Password: root
-MySQL service is disabled by default.
-Use the following command as a part of your job to start the service: 'sudo systemctl start mysql.service'
-```
 
 #### MS SQL
 - sqlcmd 17.10.0001.1
@@ -241,34 +222,8 @@ Use the following command as a part of your job to start the service: 'sudo syst
 ### Web Servers
 | Name    | Version | ConfigFile                | ServiceStatus | ListenPort |
 | ------- | ------- | ------------------------- | ------------- | ---------- |
-| apache2 | 2.4.52  | /etc/apache2/apache2.conf | inactive      | 80         |
-| nginx   | 1.18.0  | /etc/nginx/nginx.conf     | inactive      | 80         |
-
-### Android
-| Package Name               | Version                                                                                                                                                                                                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Android Command Line Tools | 9.0                                                                                                                                                                                                                                |
-| Android Emulator           | 32.1.15                                                                                                                                                                                                                            |
-| Android SDK Build-tools    | 34.0.0<br>33.0.0 33.0.1 33.0.2<br>32.0.0<br>31.0.0<br>30.0.0 30.0.1 30.0.2 30.0.3<br>29.0.0 29.0.1 29.0.2 29.0.3<br>28.0.0 28.0.1 28.0.2 28.0.3<br>27.0.0 27.0.1 27.0.2 27.0.3                                                     |
-| Android SDK Platform-Tools | 34.0.4                                                                                                                                                                                                                             |
-| Android SDK Platforms      | android-34 (rev 2)<br>android-33-ext5 (rev 1)<br>android-33-ext4 (rev 1)<br>android-33 (rev 3)<br>android-32 (rev 1)<br>android-31 (rev 1)<br>android-30 (rev 3)<br>android-29 (rev 5)<br>android-28 (rev 6)<br>android-27 (rev 3) |
-| Android SDK Tools          | 26.1.1                                                                                                                                                                                                                             |
-| Android Support Repository | 47.0.0                                                                                                                                                                                                                             |
-| CMake                      | 3.10.2<br>3.18.1<br>3.22.1                                                                                                                                                                                                         |
-| Google Play services       | 49                                                                                                                                                                                                                                 |
-| Google Repository          | 58                                                                                                                                                                                                                                 |
-| NDK                        | 23.2.8568313<br>24.0.8215888<br>25.2.9519653 (default)                                                                                                                                                                             |
-| SDK Patch Applier v4       | 1                                                                                                                                                                                                                                  |
-
-#### Environment variables
-| Name                    | Value                                       |
-| ----------------------- | ------------------------------------------- |
-| ANDROID_HOME            | /usr/local/lib/android/sdk                  |
-| ANDROID_NDK             | /usr/local/lib/android/sdk/ndk/25.2.9519653 |
-| ANDROID_NDK_HOME        | /usr/local/lib/android/sdk/ndk/25.2.9519653 |
-| ANDROID_NDK_LATEST_HOME | /usr/local/lib/android/sdk/ndk/25.2.9519653 |
-| ANDROID_NDK_ROOT        | /usr/local/lib/android/sdk/ndk/25.2.9519653 |
-| ANDROID_SDK_ROOT        | /usr/local/lib/android/sdk                  |
+| apache2 | 2.4.52  | /etc/apache2/apache2.conf |               | 80         |
+| nginx   | 1.18.0  | /etc/nginx/nginx.conf     |               | 80         |
 
 ### Cached Docker images
 | Repository:Tag          | Digest                                                                   | Created    |
@@ -280,6 +235,7 @@ Use the following command as a part of your job to start the service: 'sudo syst
 | buildpack-deps:buster   | sha256:c6cfa5c691f91c0760341abf073efe1c4b0437ad05375290b3298b8e1219de5b  | 2023-08-16 |
 | debian:10               | sha256:b86bfc1dd2fb1820fea6c1e0b6e23d155198b518b3a506f6edad71bf6e9a8cef  | 2023-08-16 |
 | debian:11               | sha256:1beb7cf458bdfe71b5220cb2069eb45e3fc7eb77a1ccfb169eaebf5f6c4809ab  | 2023-08-16 |
+| ghifari160/ubuntu:22.04 | sha256:d74d78e0c318ce7db2be453e9e2be99c0a5a3540fbb9d386024b7b921055aa86  | 2023-09-03 |
 | moby/buildkit:latest    | sha256:890dcae054e3039f6c6b76bf0da80a130fa6e6bb1f3624063ef0210ac2c57b06  | 2023-08-24 |
 | node:14                 | sha256:a158d3b9b4e3fa813fa6c8c590b8f0a860e015ad4e59bbce5744d2f6fd8461aa  | 2023-04-12 |
 | node:14-alpine          | sha256:434215b487a329c9e867202ff89e704d3a75e554822e07f3e0c0f9e606121b33  | 2023-03-29 |
